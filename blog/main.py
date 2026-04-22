@@ -2,10 +2,16 @@ from fastapi import FastAPI,Depends,status,Response,HTTPException
 from . import schemas,models
 from .database import engine, SessionLocal
 from sqlalchemy.orm import Session 
-from .ml_model import model
+from .ml_model import model, scaler, columns
+print("model imported")
+print(type(model))
 from .schemas import PredictionInput
+import pandas as pd
+
 
 app = FastAPI()
+
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -69,18 +75,36 @@ def create(request:schemas.User,db: Session = Depends(get_db)):
 @app.post("/predict")
 def predict(data: PredictionInput):
     try:
-        input_data = [[data.age, data.cholesterol, data.restingBP]]
 
-        result = model.predict(input_data)
-        proba = model.predict_proba(input_data)
+        input_dict = data.dict()
+        df = pd.DataFrame([input_dict])
+
+        df = pd.get_dummies(df)
+
+        for col in columns:
+            if col not in df:
+                df[col] = 0
+
+        df = df[columns]
+
+        df = scaler.transform(df)
+
+       
+
+        result = model.predict(df)
+
+      
+
+        proba = model.predict_proba(df)
 
         return {
             "prediction": int(result[0]),
             "confidence": float(max(proba[0]))
         }
-    except Exception as e:
-        return {"error": str(e)}
 
+    except Exception as e:
+       
+        return {"error": str(e)}
 @app.get("/")
 def home():
     return {"message": "ML Prediction API is running"}
