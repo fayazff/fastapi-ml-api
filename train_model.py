@@ -1,46 +1,48 @@
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
 import pickle
 
-#dataset 
-df = pd.read_csv("blog/data/heart.csv")
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
-#clean column names
-df.columns = df.columns.str.strip()
+# Load dataset
+df = pd.read_csv("app/data/heart.csv")
 
-#select features
-X = df.drop(columns=['HeartDisease'])
-y = df['HeartDisease']
+# Features and target
+X = df.drop("HeartDisease", axis=1)
+y = df["HeartDisease"]
 
-#convert categorical variables to numeric
+# One-hot encoding
+X = pd.get_dummies(X)
 
-X = pd.get_dummies(X, drop_first=True)
+# Save column names
+columns = X.columns.tolist()
 
-#split dataset(80% train,20% test)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# scale 
+# Scaling
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
 
-#model train
+X_train = scaler.fit_transform(X_train)
+
+# Model
 model = LogisticRegression(max_iter=1000)
+
 model.fit(X_train, y_train)
 
-#evaluate model
-pred = model.predict(X_test)
-accuracy = accuracy_score(y_test,pred)
+# Save model
+with open("app/model.pkl", "wb") as f:
+    pickle.dump(model, f)
 
-print("Model Accuracy:", accuracy)
+# Save scaler
+with open("app/scaler.pkl", "wb") as f:
+    pickle.dump(scaler, f)
 
-#save model
-with open("blog/model.pkl", "wb") as f:
-    pickle.dump((model, scaler, X.columns), f)
+# Save columns
+with open("app/columns.pkl", "wb") as f:
+    pickle.dump(columns, f)
 
-
-
-print("model trained and saved successfully")
+print("Model, scaler, and columns saved successfully.")
