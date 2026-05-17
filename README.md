@@ -106,7 +106,7 @@ heart-disease-prediction-api/
 
 ---
 
-## How to Run the Project
+## To Run the Project
 
 1. Clone the repository
 
